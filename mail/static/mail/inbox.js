@@ -4,8 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     load_mailbox('inbox');
     show_inbox();
   });
-  document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
-  document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
+  document.querySelector('#sent').addEventListener('click', () => {
+    load_mailbox('sent');
+    show_sent();
+  });
+  document.querySelector('#archived').addEventListener('click', () => {
+    load_mailbox('archive');
+    show_archived();
+  });
   document.querySelector('#compose').addEventListener('click', compose_email);
 
   // By default, load the inbox
@@ -61,4 +67,70 @@ function send_email() {
 
   //Load Inbox
   return load_mailbox('inbox');
+}
+
+function show_inbox() {
+
+  let emailsView = document.querySelector("#emails-view");
+
+  fetch('/emails/inbox')
+  .then(response => response.json())
+  .then(emails => {
+
+    /*
+    Show Email in inbox
+    Step-1 Iterate Through the Emails Object that the API Returned
+    Step-2 Check if the Email is Read or Not
+    Step-3 If Email is Read, then set the html of the email to gray and add other html
+    */
+    for (const email in emails) {
+      if (emails[email].read === true) {
+      emailsView.innerHTML += 
+      `
+      <div class="d-flex bd-highlight border border-dark border-1 mb-2 bg-light">
+        <div class="p-2 bd-highlight fw-light">${emails[email].sender}</div>
+        <div class="p-2 flex-grow-1 bd-highlight">${emails[email].subject}</div>
+        <div class="p-2 bd-highlight fw-light">${emails[email].timestamp}</div>
+      </div>
+      `;
+      } else {
+      emailsView.innerHTML += 
+      `
+      <div class="d-flex bd-highlight border border-dark border-1 mb-2">
+        <div class="p-2 bd-highlight fw-light">${emails[email].sender}</div>
+        <div class="p-2 flex-grow-1 bd-highlight">${emails[email].subject}</div>
+        <div class="p-2 bd-highlight fw-light">${emails[email].timestamp}</div>
+      </div>
+      `;
+      }
+    }
+  });
+  return true;
+}
+
+function show_sent() {
+
+  let emailsView = document.querySelector("#emails-view");
+
+  fetch('/emails/sent')
+  .then(response => response.json())
+  .then(emails => {
+
+    /*
+    Show Email in Sents
+    Step-1 Iterate Through the Emails Object that the API Returned
+    Step-2 Write Inner HTML
+    */
+    for (const email in emails) {
+      emailsView.innerHTML += 
+      `
+      <div class="d-flex bd-highlight border border-dark border-1 mb-2 bg-light">
+        <div class="p-2 bd-highlight fw-light">${emails[email].sender}</div>
+        <div class="p-2 flex-grow-1 bd-highlight">${emails[email].subject}</div>
+        <div class="p-2 bd-highlight fw-light">${emails[email].timestamp}</div>
+      </div>
+      `;
+    }
+  });
+  return true;
 }
