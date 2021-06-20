@@ -26,6 +26,7 @@ function compose_email() {
 
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#single-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
 
   // Clear out composition fields
@@ -39,6 +40,7 @@ function load_mailbox(mailbox) {
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector('#single-view').style.display = 'none';
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
@@ -87,20 +89,24 @@ function show_inbox() {
       if (emails[email].read === true) {
       emailsView.innerHTML += 
       `
+      <a id="${emails[email].id}" class="show_email" onclick="show_email(this.id)">
       <div class="d-flex bd-highlight border border-dark border-1 mb-2 bg-light">
         <div class="p-2 bd-highlight fw-light">${emails[email].sender}</div>
         <div class="p-2 flex-grow-1 bd-highlight">${emails[email].subject}</div>
         <div class="p-2 bd-highlight fw-light">${emails[email].timestamp}</div>
       </div>
+      </a>
       `;
       } else {
       emailsView.innerHTML += 
       `
+      <a id="${emails[email].id}" class="show_email" onclick="show_email(this.id)">
       <div class="d-flex bd-highlight border border-dark border-1 mb-2">
         <div class="p-2 bd-highlight fw-light">${emails[email].sender}</div>
         <div class="p-2 flex-grow-1 bd-highlight">${emails[email].subject}</div>
         <div class="p-2 bd-highlight fw-light">${emails[email].timestamp}</div>
       </div>
+      </a>
       `;
       }
     }
@@ -124,13 +130,117 @@ function show_sent() {
     for (const email in emails) {
       emailsView.innerHTML += 
       `
+      <a id="${emails[email].id}" class="show_email" onclick="show_email(this.id)">
       <div class="d-flex bd-highlight border border-dark border-1 mb-2 bg-light">
         <div class="p-2 bd-highlight fw-light">${emails[email].sender}</div>
         <div class="p-2 flex-grow-1 bd-highlight">${emails[email].subject}</div>
         <div class="p-2 bd-highlight fw-light">${emails[email].timestamp}</div>
       </div>
+      </a>
       `;
     }
+  });
+  return true;
+}
+
+function show_email(id) {
+  let buttonText = '';
+  singleView = document.querySelector("#single-view");
+
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector('#single-view').style.display = 'block';
+
+  fetch(`/emails/${id}`)
+  .then(response => response.json())
+  .then(email => {
+      // Print email
+
+      if (email['archived'] == false) {
+        buttonText = "Archive";
+      } else {
+        buttonText = "Unarchive";
+      }
+
+      singleView.innerHTML =
+      `
+      <div class="card">
+      <div class="card-header">
+        Sent By: ${email.sender} <br>
+        Sent To: ${email.recipients.join(",")} <br>
+        Sent At: ${email.timestamp} <br>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title">${email.subject}</h5>
+        <p class="card-text">${email.body}</p>
+        <a href="" class="btn btn-primary" onclick="archive_email(${email.id})">${buttonText}</a>
+        <a href="" class="btn btn-primary">Go Back</a>
+      </div>
+    </div>
+      `;
+
+      if (email['read'] == false) {
+        //making the read attribute true
+        fetch(`/emails/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            read: true
+          })  
+        })
+      }
+  });
+}
+
+function show_archived() {
+
+  let emailsView = document.querySelector("#emails-view");
+
+  fetch('/emails/archive')
+  .then(response => response.json())
+  .then(emails => {
+
+    /*
+    Show Email in Sents
+    Step-1 Iterate Through the Emails Object that the API Returned
+    Step-2 Write Inner HTML
+    */
+    for (const email in emails) {
+      emailsView.innerHTML += 
+      `
+      <a id="${emails[email].id}" class="show_email" onclick="show_email(this.id)">
+      <div class="d-flex bd-highlight border border-dark border-1 mb-2 bg-light">
+        <div class="p-2 bd-highlight fw-light">${emails[email].sender}</div>
+        <div class="p-2 flex-grow-1 bd-highlight">${emails[email].subject}</div>
+        <div class="p-2 bd-highlight fw-light">${emails[email].timestamp}</div>
+      </div>
+      </a>
+      `;
+    }
+  });
+  return true;
+}
+
+function archive_email(id) {
+  fetch(`/emails/${id}`)
+  .then(response => response.json())
+  .then(email => {
+      // Print email
+      if (email['archived'] == false) {
+        //making the read attribute true
+        fetch(`/emails/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+          archived: true
+          })  
+        })
+      } else {
+        fetch(`/emails/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+          archived: false
+          })  
+        })
+      }
   });
   return true;
 }
