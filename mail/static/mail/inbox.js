@@ -173,10 +173,11 @@ function show_email(id) {
       <div class="card-body">
         <h5 class="card-title">${email.subject}</h5>
         <p class="card-text">${email.body}</p>
-        <a href="" class="btn btn-primary" onclick="archive_email(${email.id})">${buttonText}</a>
+        <a href="" class="btn btn-primary" id="reply" onclick="return reply_email(${email.id});">Reply</a>
+        <a href="" class="btn btn-primary" id="archive" onclick="archive_email(${email.id})">${buttonText}</a>
         <a href="" class="btn btn-primary">Go Back</a>
       </div>
-    </div>
+      </div>
       `;
 
       if (email['read'] == false) {
@@ -243,4 +244,34 @@ function archive_email(id) {
       }
   });
   return true;
+}
+
+function reply_email(id) {
+  
+  // Show compose view and hide other views
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#single-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'block';
+
+  const recipients = document.getElementById('compose-recipients');
+  const subject =  document.getElementById('compose-subject');
+  const body = document.getElementById('compose-body');
+
+  subject.innerText = "Hello";
+
+  fetch(`/emails/${id}`)
+  .then(response => response.json())
+  .then(email => {
+    document.querySelector('#compose-recipients').value = email['sender'];
+    document.querySelector('#compose-body').value = `On ${email['timestamp']}, ${email['sender']} wrote: ${email['body']}`;
+    //checking for subject
+    if (email['subject'].search('Re:')) {
+      document.querySelector('#compose-subject').value = email['subject'];
+    }
+    else {
+      document.querySelector('#compose-subject').value = `Re: ${email['subject']}`;
+    }
+  });
+
+  return false;
 }
